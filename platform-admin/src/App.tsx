@@ -6,7 +6,7 @@ function App() {
 
   return (
     <>
-      <h1>Platform Admin</h1>
+      <h1 className='text-3xl text-pink-700'>Platform Admin</h1>
     </>
   )
 }
