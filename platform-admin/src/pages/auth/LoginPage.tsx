@@ -1,13 +1,18 @@
 import { FieldGroup, FieldLabel, Field } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ShieldCheckIcon } from "lucide-react";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { useAppDispatch} from "../../hooks/use-store";
+import { fetchLogin } from "@/store/auth/authSlice";
+import { getApiErrorMessage } from "@/lib/api.error";
+import type { loginResponse } from "@/api/auth";
 
 export default function LoginPage() {
-
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
@@ -17,13 +22,30 @@ export default function LoginPage() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
         setIsSubmiting(true);
         setError(null);
 
-        setTimeout(() => {
+        try {
+            const result:any = await dispatch(fetchLogin({
+                email:email,
+                password:password
+             }))
+
+             const response = result?.payload as loginResponse;
+
+             if(response.accessToken && response.refreshToken && response.userType){
+
+                 navigate("/dashboard");
+             }else {
+                setError(getApiErrorMessage(result,result?.payload));
+             }
             setIsSubmiting(false);
-            setError("Invalid email or password");
-        }, 2000)
+        } catch (error) {
+           setError(getApiErrorMessage(error, "An error occurred while logging in"));
+        } finally {
+            setIsSubmiting(false);
+        }
 
     }
 
