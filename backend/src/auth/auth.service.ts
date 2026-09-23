@@ -127,4 +127,17 @@ export class AuthService {
   }
  
   }
+
+  async me(userId:string)
+  {
+    const data:any = await this.prisma.user.findUnique({
+      where:{
+        id:userId
+      }
+    })
+
+    const {passwordHash,twoFactorSecret, ...rest} = data;
+
+    return rest;
+  }
 }

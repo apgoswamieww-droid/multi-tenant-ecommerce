@@ -3,9 +3,15 @@ import { getApiErrorMessage } from '@/lib/api.error'
 import { storage } from '@/lib/storage'
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
-interface User {
+export interface User {
+    id:string,
     email: string,
-    fullName: string
+    fullName: string,
+    phone:string,
+    status:string,
+    twoFactorEnabled?:boolean,
+    createdAt : Date,
+    updatedAt : Date
 }
 
 export type AsyncStatus = 'idle' | 'loading' | 'succeeded' | 'failed'
@@ -24,8 +30,8 @@ interface AuthState {
 
 const initialState: AuthState = {
     user: null,
-    accessToken: "",
-    refreshToken: "",
+    accessToken: storage.getAccessToken(),
+    refreshToken: storage.getRefreshToken(),
     userType: "ADMIN",
     status: 'idle',
     error: null
@@ -39,6 +45,15 @@ export const fetchLogin = createAsyncThunk('auth/login', async (payload: loginPa
         return tokens
     } catch (error) {
         return rejectWithValue(getApiErrorMessage(error,"Could not login"))
+    }
+})
+
+export const fetchMe = createAsyncThunk('auth/me', async (payload,{rejectWithValue}) => {
+    try {
+        const data = await authApi.me()
+        return data;    
+    } catch (error) {
+        return rejectWithValue(getApiErrorMessage(error,"Failed to fetch My Data"))
     }
 })
 
@@ -67,6 +82,18 @@ export const authSlice = createSlice({
             state.accessToken = null;
             state.refreshToken = null;
             state.userType = "ADMIN";
+        })
+        builder.addCase(fetchMe.pending,(state)=>{
+            state.status='loading'
+            state.user = null
+        })
+        builder.addCase(fetchMe.fulfilled,(state,action)=>{
+            state.status='succeeded'
+            state.user= action.payload
+        })
+        builder.addCase(fetchMe.rejected,(state)=>{
+            state.status='failed'
+            state.user = null
         })
     }
 })
